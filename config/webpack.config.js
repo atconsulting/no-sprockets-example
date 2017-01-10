@@ -4,32 +4,59 @@
 var path = require('path');
 var webpack = require('webpack');
 var StatsPlugin = require('stats-webpack-plugin');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 // must match config.webpack.dev_server.port
+var production = process.env.NODE_ENV === 'production';
 var devServerPort = 3808;
+var root = process.cwd();
 
 // set NODE_ENV=production on the environment to add asset fingerprints
-var production = process.env.NODE_ENV === 'production';
 
 var config = {
   entry: {
-    // Sources are expected to live in $app_root/webpack
-    'application': './webpack/application.js'
+    application: path.join(root, 'client', 'app', 'startup', 'registration.js'),
+    common: ['react', 'react-dom', 'react-on-rails']
   },
 
   output: {
-    // Build assets directly in to public/webpack/, let webpack know
-    // that all webpacked assets start with webpack/
-
-    // must match config.webpack.output_dir
-    path: path.join(__dirname, '..', 'public', 'webpack'),
-    publicPath: '/webpack/',
-
+    path: path.join(root, 'public', 'assets'),
+    publicPath: '/assets/',
     filename: production ? '[name]-[chunkhash].js' : '[name].js'
   },
 
   resolve: {
-    root: path.join(__dirname, '..', 'webpack')
+    root: path.join(root, 'client'),
+    extensions: ['', '.js', '.jsx'],
+    alias: {
+      styles: 'styles',
+      images: 'images',
+      components: 'app/components'
+    }
+  },
+
+  module: {
+    loaders: [
+      {
+        loader: 'babel',
+        exclude: /\/node_modules\//
+      },
+      // {
+      //   test: /\.svg$/,
+      //   loader: 'svg-sprite?' + JSON.stringify({
+      //     name: '[name]',
+      //     prefixize: true
+      //   })
+      // },
+      // {
+      //   loader: `file?name=${production ? '[name]-[hash].[ext]' : '[name].[ext]'}`,
+      //   test: /\.(jpe?g|png|gif|woff)$/i
+      // },
+      // {
+      //   test: /\.(scss|sass)$/,
+      //   loader: ExtractTextPlugin.extract('css!postcss!sass')
+      // }
+    ]
   },
 
   plugins: [
@@ -41,6 +68,11 @@ var config = {
       chunks: false,
       modules: false,
       assets: true
+    }),
+    new ExtractTextPlugin(production ? '[name]-[chunkhash].css' : '[name].css'),
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'common',
+      minChunks: 2
     })]
 };
 
@@ -62,9 +94,8 @@ if (production) {
     port: devServerPort,
     headers: { 'Access-Control-Allow-Origin': '*' }
   };
-  config.output.publicPath = '//localhost:' + devServerPort + '/webpack/';
-  // Source maps
-  config.devtool = 'cheap-module-eval-source-map';
+  config.output.publicPath = '//localhost:' + devServerPort + '/assets/';
+  config.devtool = 'source-map';
 }
 
 module.exports = config;

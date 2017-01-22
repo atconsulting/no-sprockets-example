@@ -15,22 +15,21 @@ var root = process.cwd();
 
 var config = {
   entry: {
-    application: path.join(root, 'client', 'app', 'startup', 'registration.js'),
+    application: path.join(root, 'app', 'startup', 'registration.js'),
     common: ['react', 'react-dom', 'react-on-rails']
   },
 
   output: {
-    path: path.join(root, 'public', 'assets'),
+    path: path.join(root, '..', 'public', 'assets'),
     publicPath: '/assets/',
-    filename: production ? '[name]-[chunkhash].js' : '[name].js'
+    filename: production ? '[name]-[chunkhash:8].js' : '[name].js'
   },
 
   resolve: {
-    root: path.join(root, 'client'),
+    root: root,
     extensions: ['', '.js', '.jsx'],
     alias: {
       styles: 'styles',
-      images: 'images',
       components: 'app/components'
     }
   },
@@ -41,39 +40,36 @@ var config = {
         loader: 'babel',
         exclude: /\/node_modules\//
       },
-      // {
-      //   test: /\.svg$/,
-      //   loader: 'svg-sprite?' + JSON.stringify({
-      //     name: '[name]',
-      //     prefixize: true
-      //   })
-      // },
-      // {
-      //   loader: `file?name=${production ? '[name]-[hash].[ext]' : '[name].[ext]'}`,
-      //   test: /\.(jpe?g|png|gif|woff)$/i
-      // },
-      // {
-      //   test: /\.(scss|sass)$/,
-      //   loader: ExtractTextPlugin.extract('css!postcss!sass')
-      // }
+      {
+        loader: `file?name=${production ? '[name]-[hash:8].[ext]' : '[name].[ext]'}`,
+        test: /\.(jpe?g|png|gif|woff)$/i
+      },
+      {
+        test: /\.(scss|sass)$/,
+        loader: ExtractTextPlugin.extract('css!postcss!sass')
+      }
     ]
   },
 
   plugins: [
     // must match config.webpack.manifest_filename
     new StatsPlugin('manifest.json', {
-      // We only need assetsByChunkName
       chunkModules: false,
       source: false,
       chunks: false,
       modules: false,
       assets: true
     }),
-    new ExtractTextPlugin(production ? '[name]-[chunkhash].css' : '[name].css'),
+    new ExtractTextPlugin(production ? '[name]-[chunkhash:8].css' : '[name].css'),
     new webpack.optimize.CommonsChunkPlugin({
       name: 'common',
       minChunks: 2
-    })]
+  })],
+  postcss: [
+    require('autoprefixer')({
+      browsers: ['last 20 versions']
+    })
+  ]
 };
 
 if (production) {
